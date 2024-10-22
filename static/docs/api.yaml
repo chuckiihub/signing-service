@@ -1,0 +1,223 @@
+openapi: 3.0.0
+info:
+  title: Signing Service API
+  description: API for managing devices and signatures
+  version: 0.1.0
+servers:
+  - url: http://localhost:8081/api/v0
+paths:
+  /health:
+    get:
+      summary: Check the health of the service
+      responses:
+        '200':
+          description: Service health information
+          content:
+            application/json:    
+              schema:
+                $ref: '#/components/schemas/Health'
+  /device:
+    post:
+      summary: Create a new device
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceCreationRequest'
+      responses:
+        '201':
+          description: Device created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceResponse'
+        '400':
+          description: Invalid request
+    get:
+      summary: List all devices
+      responses:
+        '200':
+          description: List of devices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DeviceResponse'
+  /device/{uuid}:
+    get:
+      summary: Get a device by UUID
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Device details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceResponse'
+        '404':
+          description: Device not found
+  /device/{deviceId}/sign:
+    post:
+      summary: Create a signature for a device
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignatureCreateRequest'
+      responses:
+        '201':
+          description: Signature created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignatureResponse'
+        '400':
+          description: Invalid request
+  /device/{deviceId}/verify:
+    post:
+      summary: Verify a device's signature
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignatureVerifyRequest'
+      responses:
+        '200':
+          description: Signature verified
+        '400':
+          description: Invalid request
+        '404':
+          description: Device or signature not found
+  /signature/{signature}:
+    get:
+      summary: Get a signature by its value
+      parameters:
+        - name: signature
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Signature details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignatureResponse'
+        '404':
+          description: Signature not found
+  /signature:
+    get:
+      summary: List all signatures
+      responses:
+        '200':
+          description: List of signatures
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SignatureResponse'
+
+components:
+  schemas:
+    DeviceCreationRequest:
+      type: object
+      required:
+        - label
+        - algorithm
+      properties:
+        label:
+          type: string
+          minLength: 1
+        algorithm:
+          type: string
+          enum: [RSA, ECC]
+    DeviceResponse:
+      type: object
+      properties:
+        uuid:
+          type: string
+        label:
+          type: string
+        algorithm:
+          type: string
+        publicKey:
+          type: string
+        privateKey:
+          type: string
+    SignatureCreateRequest:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: string
+          minLength: 1
+    SignatureVerifyRequest:
+      type: object
+      required:
+        - signedData
+        - signature
+      properties:
+        signedData:
+          type: string
+          minLength: 1
+        signature:
+          type: string
+          minLength: 1
+    SignatureResponse:
+      type: object
+      properties:
+        deviceId:
+          type: string
+        signedData:
+          type: string
+        signature:
+          type: string
+    Health:
+      type: object
+      properties:
+        status:
+          type: string
+        version:
+          type: string
+        services:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ServiceHealth'
+    ServiceHealth:
+      type: object
+      properties:
+        status:
+          type: string
+        persistence_layer:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/PersistenceHealth'
+    PersistenceHealth:
+      type: object
+      properties:
+        status:
+          type: string
