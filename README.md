@@ -1,84 +1,83 @@
 # Signature Service - Coding Challenge
 
-## Instructions
+## Introduction
 
-This challenge is part of the software engineering interview process at fiskaly.
+Hello, I'm Matías. I have to say that I've actually enjoyed doing the code challenge. In my last job I was working with Java and it was in my previous job that I worked with Go for a year. I have to say that I love the language, so, this has been fun and I would love to keep studying and improve with better Go best practices from here on.
 
-If you see this challenge, you've passed the first round of interviews and are now at the second and last stage.
+Thanks for the comments and good requirement explanation, those have been quite nice to have.
 
-We would like you to attempt the challenge below. You will then be able to discuss your solution in the skill-fit interview with two of our colleagues from the development department.
+## Solution
 
-The quality of your code is more important to us than the quantity.
+The structure of the project is the following, with some explanations:
 
-### Project Setup
+```
+api/                        Represents the HTTP Transport layer.
+-- dto/                         Contain the Request and Response declarations
+-- validation/                  Contains the logic to setup the validation logic and "a" custom validator.
 
-For the challenge, we provide you with:
+crypto/                     I've treated this directory as a library. I did some modifications to support the addition of new encryption algorithms
 
-- Go project containing the setup
-- Basic API structure and functionality
-- Encoding / decoding of different key types (only needed to serialize keys to a persistent storage)
-- Key generation algorithms (ECC, RSA)
-- Library to generate UUIDs, included in `go.mod`
+domain/                     Device, Signature and Health structures.
 
-You can use these things as a foundation, but you're also free to modify them as you see fit.
+errors/apperrors.go         This is a custom error wrapper so when the error travels up in the call stack, the caller knows a bit more about the error (like http.StatusCode)
 
-### Prerequisites & Tooling
+persistence/                This is basically a repository pattern. I assume we might want to store stuff in different databases so I did not enforce any DB dependency between them.
 
-- Golang (v1.20+)
+service/                    So to abstract the domain logic from the Transport Layer I build services that could be used later to add a different transport layer (websockets, gRPC)
 
-### The Challenge
-
-The goal is to implement an API service that allows customers to create `signature devices` with which they can sign arbitrary transaction data.
-
-#### Domain Description
-
-The `signature service` can manage multiple `signature devices`. Such a device is identified by a unique identifier (e.g. UUID). For now you can pretend there is only one user / organization using the system (e.g. a dedicated node for them), therefore you do not need to think about user management at all.
-
-When creating the `signature device`, the client of the API has to choose the signature algorithm that the device will be using to sign transaction data. During the creation process, a new key pair (`public key` & `private key`) has to be generated and assigned to the device.
-
-The `signature device` should also have a `label` that can be used to display it in the UI and a `signature_counter` that tracks how many signatures have been created with this device. The `label` is provided by the user. The `signature_counter` shall only be modified internally.
-
-##### Signature Creation
-
-For the signature creation, the client will have to provide `data_to_be_signed` through the API. In order to increase the security of the system, we will extend this raw data with the current `signature_counter` and the `last_signature`.
-
-The resulting string (`secured_data_to_be_signed`) should follow this format: `<signature_counter>_<data_to_be_signed>_<last_signature_base64_encoded>`
-
-In the base case there is no `last_signature` (= `signature_counter == 0`). Use the `base64`-encoded device ID (`last_signature = base64(device.id)`) instead of the `last_signature`.
-
-This special string will be signed (`Signer.sign(secured_data_to_be_signed)`) and the resulting signature (`base64` encoded) will be returned to the client. The signature response could look like this:
-
-```json
-{ 
-    "signature": <signature_base64_encoded>,
-    "signed_data": "<signature_counter>_<data_to_be_signed>_<last_signature_base64_encoded>"
-}
+static/docs/                Docs of the API, so you can also test it quickly. Assumes service is running on port 8081
 ```
 
-After the signature has been created, the signature counter's value has to be incremented (`signature_counter += 1`).
+### Addition of new Algorithms
 
-#### API
+Let's say that you want to add a new algorithm, you're gonna have to:
 
-For now we need to provide two main operations to our customers:
+- Add a new SignatureAlgorithm constant (crypto/algorithm.go)
+- Implement the Crypto interface (which uses a Generic KeyPair) (crypto/crypto.go)
+- Implement the Signer interface (signer.go) and the KeyGenerator (generation.go) interface. I kept Signer interface as the challenge wanted me to implement the Signer one. TBH I would have done everything in the Crypto interface specified above.
+- Watch out with the "New" methods on all those interfaces. You're gonna have to add a case to return the new Signer, KeyGenerator and Crypto.
 
-- `CreateSignatureDevice(id: string, algorithm: 'ECC' | 'RSA', [optional]: label: string): CreateSignatureDeviceResponse`
-- `SignTransaction(deviceId: string, data: string): SignatureResponse`
+The validation logic will grab the new algorithm and use it to validate requests. The Services will use the Crypto implementations and adapt automatically to the new algorithm.
 
-Think of how to expose these operations through a RESTful HTTP-based API.
+## Extras
 
-In addition, `list / retrieval operations` for the resources generated in the previous operations should be made available to the customers.
+### Swagger docs
 
-#### QA / Testing
+You can access the swagger documentation using /api/v0/docs endpoint.
 
-As we are in the business of compliance technology, we need to make sure that our implementation is verifiably correct. Think of an automatable way to assure the correctness (in this challenge: adherence to the specifications) of the system.
+### Health endpoint
 
-#### Technical Constraints & Considerations
+The health endpoint will call each of the services' CheckHealth method and gather all the information in the Health response. This way tracking what's the problem with the service 
+should be easier.
 
-- The system will be used by many concurrent clients accessing the same resources.
-- The `signature_counter` has to be strictly monotonically increasing and ideally without any gaps.
-- The system currently only supports `RSA` and `ECDSA` as signature algorithms. Try to design the signing mechanism in a way that allows easy extension to other algorithms without changing the core domain logic.
-- For now it is enough to store signature devices in memory. Efficiency is not a priority for this. In the future we might want to scale out. As you design your storage logic, keep in mind that we may later want to switch to a relational database.
+### Verify method
 
-#### Credits
+To check that I was doing everything alright I've implemented a verify endpoint that answers 200 if the signature is valid and 429 (I'm a Teapot) if the signature is not valid.
+Improvement on the response should be done :) 
 
-This challenge is heavily influenced by the regulations for `KassenSichV` (Germany) as well as the `RKSV` (Austria) and our solutions for them.
+### Makefile
+
+There's a simple Makefile where you can run the tests, compile, generate the docs.
+
+## Things to note
+
+### Signing data and concurrency
+
+The requirement for the Signing functionality only specified that the Device.SignatureCounter should be handled atomically. I've implemented this with a map[uuid]RWMutex (a mutex per device) as we should also be carefull to not mess around concurrently with the LastSignature field that might be modified by many at the same time. Using a Mutex per device would improve the performance a bit as we are not locking the whole device database when we need exclusive access to a device.
+
+I've also implemented a very simple rollback logic in the service, this could have been done in the PersistenceLayer preferably. 
+
+### Locking Service
+
+As horizontally scaling is generally needed I did the Locking per device (right before signing) in a separate service. Later on, if we are using an external database, this could be implemented
+using, for example Redis, to have a locking functionality across different nodes/pods.
+
+## Things I would have like to have the time to do
+
+### Endpoint Testing
+
+I would have liked to do Functional/Endpoint testing (httptest) so to check how the app reacts to different JSON payloads, testing the error cases and unhappy paths so to make sure that the app always works. 
+
+### Unhappy path testing
+
+When I'm coding I like to do a lot of error case / not happy path tests. Due to the time, I've decided to stick with showing knowledge about Mocking, unit testing, etc. As an example, not every functionality is being testedm which, I also would have liked to do.
