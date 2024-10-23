@@ -36,6 +36,12 @@ paths:
           description: Invalid request
     get:
       summary: List all devices
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+          description: Page number
       responses:
         '200':
           description: List of devices
@@ -130,6 +136,12 @@ paths:
   /signature:
     get:
       summary: List all signatures
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+          description: Page number
       responses:
         '200':
           description: List of signatures
