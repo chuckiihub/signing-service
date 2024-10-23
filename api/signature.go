@@ -44,7 +44,7 @@ func (context *Server) SignatureCreate(response http.ResponseWriter, request *ht
 
 	signatureResponse := dto.NewSignatureResponseFromSignature(signature)
 
-	WriteAPIResponse(response, http.StatusOK, signatureResponse)
+	WriteAPIResponse(response, http.StatusCreated, signatureResponse)
 }
 
 func (context *Server) SignatureGet(response http.ResponseWriter, request *http.Request) {

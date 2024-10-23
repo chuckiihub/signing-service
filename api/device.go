@@ -45,7 +45,7 @@ func (context *Server) DeviceCreate(response http.ResponseWriter, request *http.
 		return
 	}
 
-	WriteAPIResponse(response, http.StatusOK, dto.NewDeviceResponse(device))
+	WriteAPIResponse(response, http.StatusCreated, dto.NewDeviceResponse(device))
 }
 
 func (context *Server) DeviceGet(response http.ResponseWriter, request *http.Request) {
