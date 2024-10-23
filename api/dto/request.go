@@ -26,7 +26,7 @@ func (request *DeviceCreationRequest) GetSignatureAlgorithm() (crypto.SignatureA
 
 // Client request to sign new data
 type SignatureCreateRequest struct {
-	Data string `json:"data" validate:"required,min:1"`
+	Data string `json:"data" validate:"required"`
 }
 
 // Client request to verified already signed data

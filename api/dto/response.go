@@ -14,6 +14,7 @@ type DeviceResponse struct {
 }
 
 type SignatureResponse struct {
+	Id         string `json:"uuid"`
 	DeviceId   string `json:"deviceId"`
 	SignedData string `json:"signedData"`
 	Signature  string `json:"signature"`
@@ -21,6 +22,7 @@ type SignatureResponse struct {
 
 func NewSignatureResponseFromSignature(signature *domain.Signature) *SignatureResponse {
 	return &SignatureResponse{
+		Id:         signature.UUID,
 		DeviceId:   signature.DeviceUUID,
 		SignedData: signature.SignedData,
 		Signature:  signature.Signature,

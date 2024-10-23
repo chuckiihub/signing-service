@@ -2,10 +2,12 @@ package api
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"strconv"
 
 	"github.com/chuckiihub/signing-service/api/dto"
+	"github.com/chuckiihub/signing-service/api/validation"
 	"github.com/gorilla/mux"
 )
 
@@ -28,6 +30,12 @@ func (context *Server) SignatureCreate(response http.ResponseWriter, request *ht
 		return
 	}
 
+	validator := validation.NewRequestValidator()
+	if err := validator.Validate(creationRequest); err != nil {
+		WriteErrorResponse(response, http.StatusBadRequest, validator.GetValidationFailureErrors(err))
+		return
+	}
+
 	signature, err := context.signatureService.Sign(deviceId, creationRequest.Data)
 	if err != nil {
 		WriteAppError(response, err)
@@ -40,6 +48,28 @@ func (context *Server) SignatureCreate(response http.ResponseWriter, request *ht
 }
 
 func (context *Server) SignatureGet(response http.ResponseWriter, request *http.Request) {
+	vars := mux.Vars(request)
+	signatureString := vars["signature"]
+
+	if signatureString == "" {
+		WriteErrorResponse(response, http.StatusBadRequest, []string{
+			"Signature is required",
+		})
+		return
+	}
+
+	signature, err := context.signatureService.Get(signatureString)
+	if err != nil {
+		WriteAppError(response, err)
+		return
+	}
+
+	if signature == nil {
+		WriteNotFoundError(response)
+		return
+	}
+
+	WriteAPIResponse(response, http.StatusOK, dto.NewSignatureResponseFromSignature(signature))
 }
 
 // Verifies that a signature is correct given a deviceId, signedData and a Signature given
@@ -60,8 +90,9 @@ func (context *Server) SignatureVerify(response http.ResponseWriter, request *ht
 		return
 	}
 
-	if err := context.validator.ValidateSignatureVerificationRequest(verifyRequest); err != nil {
-		WriteErrorResponse(response, http.StatusBadRequest, context.validator.GetValidationFailureErrors(err))
+	validator := validation.NewRequestValidator()
+	if err := validator.Validate(verifyRequest); err != nil {
+		WriteErrorResponse(response, http.StatusBadRequest, validator.GetValidationFailureErrors(err))
 		return
 	}
 
@@ -82,13 +113,16 @@ func (context *Server) SignatureVerify(response http.ResponseWriter, request *ht
 
 // List services.
 func (context *Server) SignatureList(response http.ResponseWriter, request *http.Request) {
-	page, err := strconv.Atoi(request.URL.Query().Get("page"))
-	if err != nil {
-		page = 0
+	pageString := request.URL.Query().Get("page")
+	page, err := strconv.Atoi(pageString)
+
+	if err != nil || page < 1 || pageString == "" {
+		page = 1
 	}
 
 	signatures, err := context.signatureService.List(page)
 	if err != nil {
+		slog.Error("could not list signatures", "error", err.Error())
 		WriteInternalError(response)
 		return
 	}

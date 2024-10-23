@@ -3,7 +3,6 @@ package validation
 import (
 	"slices"
 
-	"github.com/chuckiihub/signing-service/api/dto"
 	"github.com/chuckiihub/signing-service/crypto"
 	"github.com/go-playground/validator/v10"
 )
@@ -11,10 +10,10 @@ import (
 var validate *validator.Validate
 
 type RequestValidator struct {
-	validationService *validator.Validate
+	validator *validator.Validate
 }
 
-func (validationService *RequestValidator) GetValidationFailureErrors(err error) []string {
+func (validation *RequestValidator) GetValidationFailureErrors(err error) []string {
 	var errors []string
 	if validationErrors, ok := err.(validator.ValidationErrors); ok {
 		for _, validationErr := range validationErrors {
@@ -28,27 +27,15 @@ func (validationService *RequestValidator) GetValidationFailureErrors(err error)
 	return errors
 }
 
-func (validationService *RequestValidator) Validate(request interface{}) error {
-	return validationService.validationService.Struct(request)
-}
-
-func (validationService *RequestValidator) ValidateDeviceCreationRequest(request dto.DeviceCreationRequest) error {
-	return validationService.validationService.Struct(request)
-}
-
-func (validationService *RequestValidator) ValidateSignatureCreationRequest(request dto.SignatureCreateRequest) error {
-	return validationService.validationService.Struct(request)
-}
-
-func (validationService *RequestValidator) ValidateSignatureVerificationRequest(request dto.SignatureVerifyRequest) error {
-	return validationService.validationService.Struct(request)
+func (validation *RequestValidator) Validate(request interface{}) error {
+	return validation.validator.Struct(request)
 }
 
 func NewRequestValidator() RequestValidator {
 	validate = validator.New()
 	validate.RegisterValidation("supported-encryption", validateSignatureAlgorithm)
 
-	return RequestValidator{validationService: validate}
+	return RequestValidator{validator: validate}
 }
 
 // Validates automatically that the string is one of SignatureAlgorithm enum

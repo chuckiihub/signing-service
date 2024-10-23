@@ -34,7 +34,7 @@ func (m *MockDevicePersistence) CheckHealth() domain.PersistenceHealth {
 	return args.Get(0).(domain.PersistenceHealth)
 }
 
-func TestCreate(t *testing.T) {
+func TestDeviceService_Create(t *testing.T) {
 	mockPersistence := new(MockDevicePersistence)
 	deviceService := &DeviceServiceImplementation{
 		persistence: mockPersistence,
@@ -58,7 +58,7 @@ func TestCreate(t *testing.T) {
 
 	mockPersistence.On("Save", mock.AnythingOfType("*domain.Device")).Return(expectedDevice, nil)
 
-	device, err := deviceService.Create(uuid, algorithm, label)
+	device, err := deviceService.Create(algorithm, label)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, device)
@@ -71,7 +71,7 @@ func TestCreate(t *testing.T) {
 	mockPersistence.AssertExpectations(t)
 }
 
-func TestFind(t *testing.T) {
+func TestDeviceService_Find(t *testing.T) {
 	mockPersistence := new(MockDevicePersistence)
 	deviceService := &DeviceServiceImplementation{
 		persistence: mockPersistence,
@@ -92,7 +92,7 @@ func TestFind(t *testing.T) {
 	mockPersistence.AssertExpectations(t)
 }
 
-func TestList(t *testing.T) {
+func TestDeviceService_List(t *testing.T) {
 	pageSize := 5
 	page := 1
 

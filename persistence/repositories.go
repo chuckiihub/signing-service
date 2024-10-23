@@ -21,7 +21,7 @@ func NewVolatileDeviceRepository() *VolatileDeviceRepository {
 type SignaturePersistance interface {
 	List(offset int, pageSize int) ([]domain.Signature, error)
 	Save(signature *domain.Signature) (*domain.Signature, error)
-	FindBySignature(signature string) (*domain.Signature, error)
+	FindByUUID(uuid string) (*domain.Signature, error)
 	CheckHealth() domain.PersistenceHealth
 }
 

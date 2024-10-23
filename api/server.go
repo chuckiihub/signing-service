@@ -3,9 +3,9 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 
-	"github.com/chuckiihub/signing-service/api/validation"
 	apperrors "github.com/chuckiihub/signing-service/errors"
 	"github.com/chuckiihub/signing-service/service"
 	"github.com/gorilla/mux"
@@ -26,7 +26,6 @@ type Server struct {
 	listenAddress    string
 	deviceService    service.DeviceService
 	signatureService service.SignatureService
-	validator        validation.RequestValidator
 }
 
 // NewServer is a factory to instantiate a new Server.
@@ -35,7 +34,6 @@ func NewServer(listenAddress string, deviceService service.DeviceService, signat
 		listenAddress:    listenAddress,
 		deviceService:    deviceService,
 		signatureService: signatureService,
-		validator:        validation.NewRequestValidator(),
 	}
 }
 
@@ -67,7 +65,7 @@ func (s *Server) ServeDocs(w http.ResponseWriter, r *http.Request) {
 
 // Handy function, for example, when JSON body is not valid
 func WriteInvalidRequestBodyError(w http.ResponseWriter) {
-	WriteErrorResponse(w, http.StatusNotFound, []string{http.StatusText(http.StatusBadRequest)})
+	WriteErrorResponse(w, http.StatusBadRequest, []string{http.StatusText(http.StatusBadRequest)})
 }
 
 // WriteInternalError writes a default internal error message as an HTTP response.
@@ -130,6 +128,10 @@ func WriteAppError(w http.ResponseWriter, err error) {
 	content := []string{http.StatusText(http.StatusBadRequest)}
 	if err.Error() != "" {
 		content = []string{err.Error()}
+	}
+
+	if statusCode == http.StatusInternalServerError {
+		slog.Error("Unhandled internal error", "error", err.Error())
 	}
 
 	WriteErrorResponse(w, statusCode, content)

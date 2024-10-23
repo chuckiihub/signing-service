@@ -7,6 +7,7 @@ import (
 	"github.com/chuckiihub/signing-service/domain"
 	apperrors "github.com/chuckiihub/signing-service/errors"
 	"github.com/chuckiihub/signing-service/persistence"
+	"github.com/google/uuid"
 )
 
 // Persistence layer
@@ -16,7 +17,8 @@ type DeviceServiceImplementation struct {
 }
 
 // Creates a new device, assigns the key pair and saves it to storage
-func (deviceService *DeviceServiceImplementation) Create(uuid string, algorithm crypto.SignatureAlgorithm, label string) (*domain.Device, error) {
+func (deviceService *DeviceServiceImplementation) Create(algorithm crypto.SignatureAlgorithm, label string) (*domain.Device, error) {
+	uuid := uuid.NewString()
 	device := &domain.Device{
 		UUID:          uuid,
 		Algorithm:     algorithm,
@@ -58,6 +60,10 @@ func (deviceService *DeviceServiceImplementation) Get(uuid string) (*domain.Devi
 
 // Get all devices from storage and retrieves them.
 func (deviceService *DeviceServiceImplementation) List(page int) ([]domain.Device, error) {
+	if page < 1 {
+		page = 1
+	}
+
 	devices, err := deviceService.persistence.List(page, deviceService.pageSize)
 
 	if err != nil {

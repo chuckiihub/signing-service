@@ -34,8 +34,8 @@ func (repository *SignatureVolatileRepository) List(page int, pageSize int) ([]d
 
 	signatures := make([]domain.Signature, 0, pageSize)
 
-	lowerLimit := page * pageSize
-	higherLimit := (page + 1) * pageSize
+	lowerLimit := (page - 1) * pageSize
+	higherLimit := (page) * pageSize
 
 	if lowerLimit > len(repository.signatures) {
 		return signatures, nil
@@ -62,16 +62,16 @@ func (repository *SignatureVolatileRepository) Save(signature *domain.Signature)
 	}
 
 	repository.signatures = append(repository.signatures, *signature)
-	repository.signatureIndexMap[signature.Signature] = len(repository.signatures) - 1
+	repository.signatureIndexMap[signature.UUID] = len(repository.signatures) - 1
 
 	return signature, nil
 }
 
-func (repository *SignatureVolatileRepository) FindBySignature(signature string) (*domain.Signature, error) {
+func (repository *SignatureVolatileRepository) FindByUUID(uuid string) (*domain.Signature, error) {
 	repository.rwLock.RLock()
 	defer repository.rwLock.RUnlock()
 
-	if index, exists := repository.signatureIndexMap[signature]; exists {
+	if index, exists := repository.signatureIndexMap[uuid]; exists {
 		deepCopy := repository.signatures[index]
 		return &deepCopy, nil
 	}

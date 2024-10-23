@@ -60,11 +60,12 @@ func (repository *VolatileDeviceRepository) List(page int, batchSize int) ([]dom
 		return nil, errors.New("batch size cannot be less than 1")
 	}
 
-	if page < 0 {
-		return nil, errors.New("page cannot be less than 0")
+	if page < 1 {
+		return nil, errors.New("page cannot be less than 1")
 	}
-	lowerLimit := page * batchSize
-	higherLimit := (page + 1) * batchSize
+
+	lowerLimit := (page - 1) * batchSize
+	higherLimit := page * batchSize
 
 	if lowerLimit > len(repository.devices) {
 		return devices, nil

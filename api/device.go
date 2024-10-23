@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/chuckiihub/signing-service/api/dto"
-	"github.com/google/uuid"
+	"github.com/chuckiihub/signing-service/api/validation"
 	"github.com/gorilla/mux"
 )
 
@@ -22,8 +22,9 @@ func (context *Server) DeviceCreate(response http.ResponseWriter, request *http.
 		return
 	}
 
-	if err := context.validator.Validate(creationRequest); err != nil {
-		WriteErrorResponse(response, http.StatusBadRequest, context.validator.GetValidationFailureErrors(err))
+	validator := validation.NewRequestValidator()
+	if err := validator.Validate(creationRequest); err != nil {
+		WriteErrorResponse(response, http.StatusBadRequest, validator.GetValidationFailureErrors(err))
 		return
 	}
 
@@ -35,7 +36,6 @@ func (context *Server) DeviceCreate(response http.ResponseWriter, request *http.
 	}
 
 	device, err := context.deviceService.Create(
-		uuid.NewString(),
 		signatureAlgorithm,
 		creationRequest.Label,
 	)
@@ -74,9 +74,11 @@ func (context *Server) DeviceGet(response http.ResponseWriter, request *http.Req
 }
 
 func (context *Server) DeviceList(response http.ResponseWriter, request *http.Request) {
-	page, err := strconv.Atoi(request.URL.Query().Get("page"))
-	if err != nil {
-		page = 0
+	pageString := request.URL.Query().Get("page")
+	page, err := strconv.Atoi(pageString)
+
+	if err != nil || page < 1 || pageString == "" {
+		page = 1
 	}
 
 	devices, err := context.deviceService.List(page)
