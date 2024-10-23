@@ -1,32 +1,36 @@
 package main
 
 import (
-	"log"
+	"log/slog"
+	"os"
 
 	"github.com/chuckiihub/signing-service/api"
+	"github.com/chuckiihub/signing-service/config"
 	"github.com/chuckiihub/signing-service/persistence"
 	"github.com/chuckiihub/signing-service/service"
 )
 
-const (
-	ListenAddress     = ":8081"
-	DevicePageSize    = 20
-	SignaturePageSize = 20
-)
+func configureLogging() {
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	slog.SetDefault(logger)
+}
 
 func main() {
+	configureLogging()
+
 	devicePersistence := persistence.NewVolatileDeviceRepository()
 	signaturePersistence := persistence.NewVolatileSignatureRepository()
 	lockService := service.NewVolatileLockService()
 
-	deviceService := service.NewDeviceService(devicePersistence, DevicePageSize)
-	signatureService := service.NewSignatureService(devicePersistence, signaturePersistence, lockService, SignaturePageSize)
+	deviceService := service.NewDeviceService(devicePersistence, config.ListPageSize)
+	signatureService := service.NewSignatureService(devicePersistence, signaturePersistence, lockService, config.ListPageSize)
 
-	server := api.NewServer(ListenAddress, deviceService, signatureService)
+	listenAddress := config.GetListenAddress(config.DefaultListenAddress)
+	server := api.NewServer(listenAddress, deviceService, signatureService)
 
 	if err := server.Run(); err != nil {
-		log.Fatal("Could not start server on ", ListenAddress)
+		slog.Error("could not start server", "port", listenAddress, "error", err.Error())
 	} else {
-		log.Default().Printf("server started on %v", ListenAddress)
+		slog.Info("server started", "port", listenAddress)
 	}
 }
