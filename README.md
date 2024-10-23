@@ -88,14 +88,8 @@ using Redis or any other service to have a locking functionality across differen
 
 ## Things I would have like to have the time to do
 
-### Endpoint Testing
+### Testing
 
-I would have liked to do Functional/Endpoint testing (httptest) so to check how the app reacts to different JSON payloads, testing the error cases and unhappy paths so to make sure that the app always works. 
+I am usually in favor of Functional/Endpoint testing so to check how the app reacts to different JSON payloads, testing the error cases and unhappy paths so to make sure that the app always works and to be sure that everything works as expected while modifying and upgrading packages. 
 
-### Unhappy path testing
-
-When I'm coding I like to do a lot of error case / not happy path tests. Due to the time, I've decided to stick with showing knowledge about Mocking, unit testing, etc. As an example, not every functionality is being testedm which, I also would have liked to do.
-
-### Config.yaml
-
-A file where generic configuration of the app can be stored (like page size while listing)
+I also like to do a lot of error case / not happy path tests. Due to the time, I've decided to stick with showing knowledge about Mocking, unit testing, etc. As a result, not every functionality is being tested which, I also would have liked to do.
