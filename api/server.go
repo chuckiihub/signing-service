@@ -41,8 +41,6 @@ func NewServer(listenAddress string, deviceService service.DeviceService, signat
 func (s *Server) Run() error {
 	router := mux.NewRouter()
 
-	router.HandleFunc("/api/v0/docs", s.ServeDocs).Methods("GET")
-
 	router.HandleFunc("/api/v0/health", s.Health)
 
 	router.HandleFunc("/api/v0/device", s.DeviceCreate).Methods("POST")
@@ -55,6 +53,9 @@ func (s *Server) Run() error {
 
 	router.HandleFunc("/api/v0/signature/{signature}", s.SignatureGet).Methods("GET")
 	router.HandleFunc("/api/v0/signature", s.SignatureList).Methods("GET")
+
+	router.HandleFunc("/api/v0/docs", s.ServeDocs).Methods("GET")
+	router.HandleFunc("/", s.ServeDocs).Methods("GET")
 
 	return http.ListenAndServe(s.listenAddress, router)
 }
