@@ -13,27 +13,31 @@ The structure of the project is the following, with some explanations:
 ```
 api/                  Represents the HTTP Transport layer.
 -- dto/                 Contain the Request and Response declarations
--- validation/          Contains the logic to setup the validation logic and "a" custom validator.
+-- validation/          Contains the logic to setup the validation logic and "a" custom
+                        validator.
 
-config/               It encapsulates the configuration of the app and provides a way to fetch
-                      binding address and log level from env vars.
+config/               It encapsulates the configuration of the app and provides a way to
+                      fetch binding address and log level from env vars.
 
-crypto/               I've treated this directory as a library. I did some modifications to support
-                      the addition of new encryption algorithms
+crypto/               I've treated this directory as a library. I did some modifications
+                      to support the addition of new encryption algorithms.
 
 domain/               Device, Signature and Health structures.
 
-errors/apperrors.go   This is a custom error wrapper so when the error travels up in the call stack,
-                      the caller knows a bit more about the error (like http.StatusCode)
+errors/apperrors.go   This is a custom error wrapper so when the error travels up in the
+                      call stack, the caller knows a bit more about the error (like
+                      http.StatusCode)
 
-persistence/          This is basically a repository pattern. I assume we might want to store stuff
-                      in different databases so I did not enforce any DB dependency between them.
+persistence/          This is basically a repository pattern. I assume we might want to
+                      store stuff in different databases so I did not enforce any DB
+                      dependency between them.
 
-service/              So to abstract the domain logic from the Transport Layer I build services that
-                      could be used later to add a different transport layer (websockets, gRPC)
+service/              So to abstract the domain logic from the Transport Layer I build
+                      services that could be used later to add a different transport
+                      layer (websockets, gRPC)
 
-static/docs/          Docs of the API, so you can also test it quickly. Assumes service is running
-                      on port 8081
+static/docs/          Docs of the API, so you can also test it quickly. Assumes service
+                      is running on port 8081
 ```
 
 ### Addition of new Algorithms
